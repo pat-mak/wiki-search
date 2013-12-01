@@ -11,6 +11,8 @@ import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.analyzing.AnalyzingQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.search.BooleanClause.Occur;
+import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.PrefixQuery;
 import org.apache.lucene.search.Query;
@@ -81,10 +83,18 @@ public class Searcher {
 	}
 
 	private Query generateAnalyzedQuery(String query) throws ParseException {
-		AnalyzingQueryParser queryParser = new AnalyzingQueryParser(
+		AnalyzingQueryParser titleQueryParser = new AnalyzingQueryParser(
 				Config.VERSION, Config.TITLE_FIED_NAME, new StandardAnalyzer(
 						Config.VERSION));
-		Query luceneQuery = queryParser.parse(query);
-		return luceneQuery;
+		AnalyzingQueryParser contentQueryParser = new AnalyzingQueryParser(
+				Config.VERSION, Config.CONTENT_FIED_NAME, new StandardAnalyzer(
+						Config.VERSION));
+		
+		Query titleLuceneQuery = titleQueryParser.parse(query);
+		Query contentLuceneQuery = contentQueryParser.parse(query);
+		BooleanQuery booleanQuery = new BooleanQuery();
+		booleanQuery.add(titleLuceneQuery, Occur.SHOULD);
+		booleanQuery.add(contentLuceneQuery, Occur.SHOULD);
+		return booleanQuery;
 	}
 }
