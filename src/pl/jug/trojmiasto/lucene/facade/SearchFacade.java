@@ -17,7 +17,7 @@ public class SearchFacade {
 		return searcher.searchPrefix(query, 20);
 	}
 
-	public SearchResult search(String query){
+	public SearchResult search(String query) throws IOException{
 		return searcher.search(query);
 	}
 }
