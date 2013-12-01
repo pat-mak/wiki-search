@@ -11,4 +11,6 @@ public class Config {
 	public static final String TIME_STRING_FIED_NAME = "timeString";
 	public static final String TITLE_NGRAM_FIED_NAME = "titleNGram";
 	public static final Version VERSION = Version.LUCENE_43;
+	public static final String TAXO_SUFFIX = "/taxo";
+	public static final char CATEGORY_SEPARATOR = '/';
 }
