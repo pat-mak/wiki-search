@@ -57,7 +57,10 @@ public class Indexer {
 		document.add(new Field(Config.TITLE_FIED_NAME, article.getTitle(), TEXT_TYPE));
 		document.add(new Field(Config.CONTENT_FIED_NAME, article.getContent(), TEXT_TYPE));
 		document.add(new Field(Config.TIME_STRING_FIED_NAME, article.getTimeString(), NOT_ANALYZED_TEXT_FIELD));
-		document.add(new Field(Config.CATEGORY_FIED_NAME, article.getCategory(), NOT_ANALYZED_TEXT_FIELD));
+		String category = article.getCategory();
+		if (null != category) {
+			document.add(new Field(Config.CATEGORY_FIED_NAME, category, NOT_ANALYZED_TEXT_FIELD));
+		}
 		return document;
 	}
 

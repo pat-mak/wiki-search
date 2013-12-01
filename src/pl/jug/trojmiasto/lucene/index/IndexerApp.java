@@ -12,7 +12,7 @@ public class IndexerApp {
 	 */
 	public static void main(String[] args) throws IOException {
 		Indexer indexer = new Indexer(Config.INDEX_PATH);
-		indexer.index(new WikipediaDataProvider(10));
+		indexer.index(new WikipediaDataProvider(1000));
 	}
 
 }
