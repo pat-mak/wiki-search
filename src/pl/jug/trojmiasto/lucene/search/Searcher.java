@@ -19,6 +19,8 @@ import org.apache.lucene.search.PrefixQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.TopDocsCollector;
+import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.search.highlight.Highlighter;
 import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
 import org.apache.lucene.search.highlight.QueryScorer;
@@ -33,7 +35,7 @@ public class Searcher {
 
 	private static final String HL_SEPARATOR = "<span class=\"separator\">&nbsp;(...)</span>";
 	private static final int FRAGMENTS = 3;
-	private static final int PAGE_SIZE = 10;
+	private static final int PAGE_SIZE = 20;
 	private IndexSearcher searcher;
 
 	public Searcher() throws IOException {
@@ -90,16 +92,17 @@ public class Searcher {
 			searchResult.markFailed("Niepoprawne zapytanie: " + e.getMessage());
 			return searchResult;
 		}
-
-		TopDocs topDocs = searcher.search(luceneQuery, PAGE_SIZE);
+		
+		TopDocsCollector<ScoreDoc> topDocsCollector = TopScoreDocCollector.create(PAGE_SIZE, false);
+		searcher.search(luceneQuery, topDocsCollector);
 
 		Highlighter highlighter = new Highlighter(new SimpleHTMLFormatter(),
 				new QueryScorer(luceneQuery));
-		List<Article> articles = extractArticlesFromTopDocs(topDocs,
+		List<Article> articles = extractArticlesFromTopDocs(topDocsCollector.topDocs(),
 				highlighter);
 
 		SearchResult searchResult = new SearchResult();
-		searchResult.setCount(topDocs.totalHits);
+		searchResult.setCount(topDocsCollector.getTotalHits());
 		searchResult.setArticles(articles);
 		return searchResult;
 	}
