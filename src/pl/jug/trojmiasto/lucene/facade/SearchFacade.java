@@ -13,11 +13,11 @@ public class SearchFacade {
 		searcher = new Searcher();
 	}
 	
-	public SearchResult suggestions(String query) throws IOException {
+	public SearchResult suggestions(String query) throws Exception {
 		return searcher.searchPrefix(query, 20);
 	}
 
-	public SearchResult search(String query) throws IOException{
+	public SearchResult search(String query) throws Exception{
 		long start = System.nanoTime();
 		SearchResult searchResult = searcher.search(query);
 		searchResult.setSearchTime((System.nanoTime() - start) );
