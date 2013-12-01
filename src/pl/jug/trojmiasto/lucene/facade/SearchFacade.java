@@ -18,6 +18,9 @@ public class SearchFacade {
 	}
 
 	public SearchResult search(String query) throws IOException{
-		return searcher.search(query);
+		long start = System.nanoTime();
+		SearchResult searchResult = searcher.search(query);
+		searchResult.setSearchTime((System.nanoTime() - start) );
+		return searchResult;
 	}
 }

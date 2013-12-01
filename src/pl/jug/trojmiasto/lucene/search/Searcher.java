@@ -5,14 +5,16 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.queryparser.analyzing.AnalyzingQueryParser;
+import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.PrefixQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
-import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.FSDirectory;
 
@@ -34,15 +36,16 @@ public class Searcher {
 				query));
 
 		TopDocs topDocs = searcher.search(luceneQuery, i);
-		
+
 		List<Article> articles = extractArticlesFromTopDocs(topDocs);
-		
+
 		SearchResult searchResult = new SearchResult();
 		searchResult.setArticles(articles);
 		return searchResult;
 	}
 
-	private List<Article> extractArticlesFromTopDocs(TopDocs topDocs) throws IOException {
+	private List<Article> extractArticlesFromTopDocs(TopDocs topDocs)
+			throws IOException {
 		List<Article> articles = new ArrayList<Article>();
 		for (ScoreDoc scoreDoc : topDocs.scoreDocs) {
 			Document document = searcher.doc(scoreDoc.doc);
@@ -57,14 +60,31 @@ public class Searcher {
 	}
 
 	public SearchResult search(String query) throws IOException {
-		Query luceneQuery = new TermQuery(new Term(Config.TITLE_FIED_NAME, query));
-		
+		Query luceneQuery;
+		try {
+			luceneQuery = generateAnalyzedQuery(query);
+		} catch (ParseException e) {
+			SearchResult searchResult = new SearchResult();
+			e.printStackTrace();
+			searchResult.markFailed("Niepoprawne zapytanie: " + e.getMessage());
+			return searchResult;
+		}
+
 		TopDocs topDocs = searcher.search(luceneQuery, PAGE_SIZE);
-		
+
 		List<Article> articles = extractArticlesFromTopDocs(topDocs);
-		
+
 		SearchResult searchResult = new SearchResult();
+		searchResult.setCount(topDocs.totalHits);
 		searchResult.setArticles(articles);
 		return searchResult;
+	}
+
+	private Query generateAnalyzedQuery(String query) throws ParseException {
+		AnalyzingQueryParser queryParser = new AnalyzingQueryParser(
+				Config.VERSION, Config.TITLE_FIED_NAME, new StandardAnalyzer(
+						Config.VERSION));
+		Query luceneQuery = queryParser.parse(query);
+		return luceneQuery;
 	}
 }
