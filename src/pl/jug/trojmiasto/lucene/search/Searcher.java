@@ -24,13 +24,18 @@ import org.apache.lucene.queryparser.analyzing.AnalyzingQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.Collector;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.MultiCollector;
 import org.apache.lucene.search.PrefixQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.Sort;
+import org.apache.lucene.search.SortField;
+import org.apache.lucene.search.SortField.Type;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TopDocsCollector;
+import org.apache.lucene.search.TopFieldCollector;
 import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.search.highlight.Highlighter;
 import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
@@ -106,14 +111,17 @@ public class Searcher {
 		}
 
 		FacetsCollector facetsCollector = prepareFacetCollector();
-		TopDocsCollector<ScoreDoc> topDocsCollector = TopScoreDocCollector.create(PAGE_SIZE, false);
-		searcher.search(luceneQuery, MultiCollector.wrap(topDocsCollector, facetsCollector));
+
+		Sort sort = new Sort(new SortField(Config.CATEGORY_FIED_NAME, Type.STRING, false));
+		TopFieldCollector topCollector = TopFieldCollector.create(sort, PAGE_SIZE, false, false,
+				false, false);
+		searcher.search(luceneQuery, MultiCollector.wrap(topCollector, facetsCollector));
 
 		Highlighter highlighter = new Highlighter(new SimpleHTMLFormatter(), new QueryScorer(luceneQuery));
-		List<Article> articles = extractArticlesFromTopDocs(topDocsCollector.topDocs(), highlighter);
+		List<Article> articles = extractArticlesFromTopDocs(topCollector.topDocs(), highlighter);
 
 		SearchResult searchResult = new SearchResult();
-		searchResult.setCount(topDocsCollector.getTotalHits());
+		searchResult.setCount(topCollector.getTotalHits());
 		searchResult.setArticles(articles);
 		searchResult.setCategories(extractCategories(facetsCollector));
 		return searchResult;
@@ -127,7 +135,7 @@ public class Searcher {
 
 		Query titleLuceneQuery = titleQueryParser.parse(query);
 		Query contentLuceneQuery = contentQueryParser.parse(query);
-		titleLuceneQuery .setBoost(0f);
+		titleLuceneQuery.setBoost(0f);
 		contentLuceneQuery.setBoost(10f);
 		BooleanQuery booleanQuery = new BooleanQuery();
 		booleanQuery.add(titleLuceneQuery, Occur.SHOULD);
@@ -140,7 +148,8 @@ public class Searcher {
 		FacetRequest facetRequests = new CountFacetRequest(categoryPath, CATEGORIES_SIZE);
 		facetRequests.setDepth(2);
 		FacetSearchParams facetSearchParams = new FacetSearchParams(facetRequests);
-		return FacetsCollector.create(new FacetsAccumulator(facetSearchParams, searcher.getIndexReader(), taxonomyReader));
+		return FacetsCollector.create(new FacetsAccumulator(facetSearchParams, searcher.getIndexReader(),
+				taxonomyReader));
 	}
 
 	private List<Category> extractCategories(FacetsCollector facetsCollector) throws IOException {
