@@ -127,6 +127,8 @@ public class Searcher {
 
 		Query titleLuceneQuery = titleQueryParser.parse(query);
 		Query contentLuceneQuery = contentQueryParser.parse(query);
+		titleLuceneQuery .setBoost(0f);
+		contentLuceneQuery.setBoost(10f);
 		BooleanQuery booleanQuery = new BooleanQuery();
 		booleanQuery.add(titleLuceneQuery, Occur.SHOULD);
 		booleanQuery.add(contentLuceneQuery, Occur.SHOULD);
@@ -149,7 +151,6 @@ public class Searcher {
 				String category = resultNode.label.toString();
 				int count = (int) resultNode.value;
 				categories.add(new Category(category, count));
-				System.out.println(category + " " + count);
 			}
 		}
 		return categories;
