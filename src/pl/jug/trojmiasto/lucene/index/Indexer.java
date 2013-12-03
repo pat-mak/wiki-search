@@ -2,9 +2,13 @@ package pl.jug.trojmiasto.lucene.index;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -66,7 +70,8 @@ public class Indexer {
 	}
 
 	private void openIndex() throws IOException {
-		IndexWriterConfig conf = new IndexWriterConfig(Config.VERSION, new StandardAnalyzer(Config.VERSION));
+		Analyzer analyzer = buildAnalyzer();
+		IndexWriterConfig conf = new IndexWriterConfig(Config.VERSION, analyzer);
 		conf.setOpenMode(OpenMode.CREATE);
 		indexWriter = new IndexWriter(FSDirectory.open(new File(indexPath)), conf);
 
@@ -75,9 +80,19 @@ public class Indexer {
 		facetFields = new FacetFields(taxonomyWriter);
 	}
 
+	private Analyzer buildAnalyzer() {
+		EdgeNGramAnalyzer nGramAnalyzer = new EdgeNGramAnalyzer(Config.VERSION);
+		Analyzer defaultAnalyzer = new StandardAnalyzer(Config.VERSION);
+		Map<String, Analyzer> analyzersMap = new HashMap<String, Analyzer>();
+		analyzersMap.put(Config.TITLE_NGRAM_FIED_NAME, nGramAnalyzer);
+		Analyzer analyzer = new PerFieldAnalyzerWrapper(defaultAnalyzer, analyzersMap);
+		return analyzer;
+	}
+
 	private Document articleToDocument(Article article) {
 		Document document = new Document();
 		document.add(new Field(Config.TITLE_FIED_NAME, article.getTitle(), TEXT_TYPE));
+		document.add(new Field(Config.TITLE_NGRAM_FIED_NAME, article.getTitle(), TEXT_TYPE));
 		document.add(new Field(Config.CONTENT_FIED_NAME, article.getContent(), TEXT_TYPE));
 		document.add(new Field(Config.TIME_STRING_FIED_NAME, article.getTimeString(), NOT_ANALYZED_TEXT_FIELD));
 		String category = article.getCategory();

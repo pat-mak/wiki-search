@@ -8,6 +8,7 @@ import java.util.List;
 
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.analysis.util.CharArraySet;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.facet.params.FacetSearchParams;
 import org.apache.lucene.facet.search.CountFacetRequest;
@@ -19,24 +20,20 @@ import org.apache.lucene.facet.search.FacetsCollector;
 import org.apache.lucene.facet.taxonomy.CategoryPath;
 import org.apache.lucene.facet.taxonomy.directory.DirectoryTaxonomyReader;
 import org.apache.lucene.index.DirectoryReader;
-import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.analyzing.AnalyzingQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.classic.QueryParser.Operator;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.Collector;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.MultiCollector;
-import org.apache.lucene.search.PrefixQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.SortField;
 import org.apache.lucene.search.SortField.Type;
 import org.apache.lucene.search.TopDocs;
-import org.apache.lucene.search.TopDocsCollector;
 import org.apache.lucene.search.TopFieldCollector;
-import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.search.highlight.Highlighter;
 import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
 import org.apache.lucene.search.highlight.QueryScorer;
@@ -64,7 +61,13 @@ public class Searcher {
 	}
 
 	public SearchResult searchPrefix(String query, int i) throws Exception {
-		Query luceneQuery = new PrefixQuery(new Term(Config.TITLE_FIED_NAME, query));
+		CharArraySet stopWords = new CharArraySet(Config.VERSION, 1, true);
+		stopWords.add("atom");
+		AnalyzingQueryParser queryParser = new AnalyzingQueryParser(Config.VERSION,
+				Config.TITLE_NGRAM_FIED_NAME, new StandardAnalyzer(Config.VERSION, stopWords));
+
+		queryParser.setDefaultOperator(Operator.AND);
+		Query luceneQuery = queryParser.parse(query);
 
 		TopDocs topDocs = searcher.search(luceneQuery, i);
 
@@ -113,8 +116,8 @@ public class Searcher {
 		FacetsCollector facetsCollector = prepareFacetCollector();
 
 		Sort sort = new Sort(new SortField(Config.CATEGORY_FIED_NAME, Type.STRING, false));
-		TopFieldCollector topCollector = TopFieldCollector.create(sort, PAGE_SIZE, false, false,
-				false, false);
+		TopFieldCollector topCollector = TopFieldCollector
+				.create(sort, PAGE_SIZE, false, false, false, false);
 		searcher.search(luceneQuery, MultiCollector.wrap(topCollector, facetsCollector));
 
 		Highlighter highlighter = new Highlighter(new SimpleHTMLFormatter(), new QueryScorer(luceneQuery));
