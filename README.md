@@ -22,6 +22,5 @@ Po zaimportowaniu pozostaje jeszcze kwestia mavena. W Help->Install New Software
 Teraz podpinamy projekt pod TomEE'ego i uruchamiamy serwer. Na stronie index.jsp powinna pojawić się 500, bo jar z lucene nie trafił na serwer. We właściwościach projektu wybieramy Deployment Assembly->Add..->Java Build Path Entries->Maven Dependencies . Teraz, po synchronizacji powinno już banglać.
 
 
-[Dodatkowe info]
-
+=== Dodatkowe info ===
 Plik do indeksowania można pobrać tu: http://dumps.wikimedia.org/plwiki/20130502/plwiki-20130502-pages-articles.xml.bz2
