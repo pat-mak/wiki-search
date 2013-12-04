@@ -36,14 +36,16 @@ public class Indexer {
 	private IndexWriter indexWriter;
 	private DirectoryTaxonomyWriter taxonomyWriter;
 	private FacetFields facetFields;
+	private OpenMode openMode;
 	static {
 		NOT_ANALYZED_TEXT_FIELD.setIndexed(true);
 		NOT_ANALYZED_TEXT_FIELD.setStored(true);
 		NOT_ANALYZED_TEXT_FIELD.setTokenized(false);
 	}
 
-	public Indexer(String indexPath) {
+	public Indexer(String indexPath, OpenMode openMode) {
 		this.indexPath = indexPath;
+		this.openMode = openMode;
 	}
 
 	public void index(WikipediaDataProvider wikipediaDataProvider) throws IOException {
@@ -52,9 +54,13 @@ public class Indexer {
 		for (Article article : wikipediaDataProvider) {
 			addArticle(article);
 		}
+		closeIndex();
+		System.out.println("Indeksowanie zakończone");
+	}
+
+	private void closeIndex() throws IOException {
 		indexWriter.close();
 		taxonomyWriter.close();
-		System.out.println("Indeksowanie zakończone");
 	}
 
 	private void addArticle(Article article) throws IOException {
@@ -72,11 +78,12 @@ public class Indexer {
 	private void openIndex() throws IOException {
 		Analyzer analyzer = buildAnalyzer();
 		IndexWriterConfig conf = new IndexWriterConfig(Config.VERSION, analyzer);
-		conf.setOpenMode(OpenMode.CREATE);
+		
+		conf.setOpenMode(openMode);
 		indexWriter = new IndexWriter(FSDirectory.open(new File(indexPath)), conf);
 
 		taxonomyWriter = new DirectoryTaxonomyWriter(
-				FSDirectory.open(new File(indexPath + Config.TAXO_SUFFIX)), OpenMode.CREATE);
+				FSDirectory.open(new File(indexPath + Config.TAXO_SUFFIX)), openMode);
 		facetFields = new FacetFields(taxonomyWriter);
 	}
 
@@ -100,6 +107,13 @@ public class Indexer {
 			document.add(new Field(Config.CATEGORY_FIED_NAME, category, NOT_ANALYZED_TEXT_FIELD));
 		}
 		return document;
+	}
+
+	
+	public void addSingleArticle(Article article) throws IOException {
+		openIndex();
+		addArticle(article);
+		closeIndex();
 	}
 
 }
